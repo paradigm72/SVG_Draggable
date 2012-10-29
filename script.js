@@ -64,69 +64,79 @@ com.local.SVG.Lib = function () {
 
 /*class to define a path object that can be moved - just need to attach handlers
 to tell it when moving starts, continues, and ends*/
-com.local.SVG.Movable = function() {
-	var movableElement;
-	var parentElement;
-	var mousePrevPos = { x: null, y: null};
-	var mouseDownOnElement;
-	
-	
-	var init = function(element, parent) {
-		movableElement = element;
-		parentElement = parent;
-	};
-		
-	var beginMouseDrag = function(e) {
-		mouseDownOnElement = true;
-		mousePrevPos.x = e.pageX;
-		mousePrevPos.y = e.pageY;
-		if (mousePrevPos.x == null) { mousePrevPos.x = e.clientX; }
-		if (mousePrevPos.y == null) { mousePrevPos.y = e.clientY; }
-	};
-	
-	var handleMouseMovement = function(e) {
-		if (mouseDownOnElement == true) {
-			var mouseDelta = { x: e.pageX - mousePrevPos.x, y: e.pageY - mousePrevPos.y};
-			com.local.SVG.Lib.MovePathObject(movableElement, mouseDelta.x, mouseDelta.y);
-			mousePrevPos.x = e.pageX;
-			mousePrevPos.y = e.pageY;
-		}
-	};
-	
-	var endMouseDrag = function() {
-		mouseDownOnElement = false;
-	}
-	
-	return {
-		Initialize: function(element, parent) { init(element, parent); },
-		BeginDrag: function(e) { beginMouseDrag(e); },
-		MouseMoved: function(e) { handleMouseMovement(e); },
-		EndDrag: function() { endMouseDrag(); }
-	}
-	
+com.local.SVG.Movable = function () {
+    var movableElement;
+    var parentElement;
+    var mousePrevPos = { x: null, y: null };
+    var mouseDownOnElement;
+
+
+    var init = function (element, parent) {
+        movableElement = element;
+        parentElement = parent;
+        movableElement.onmousedown = beginMouseDrag;
+        movableElement.onmousemove = handleMouseMovement;
+        movableElement.onmouseup = endMouseDrag;
+    };
+
+    var beginMouseDrag = function (e) {
+        mouseDownOnElement = true;
+        mousePrevPos.x = e.pageX;
+        mousePrevPos.y = e.pageY;
+        if (mousePrevPos.x == null) { mousePrevPos.x = e.clientX; }
+        if (mousePrevPos.y == null) { mousePrevPos.y = e.clientY; }
+    };
+
+    var handleMouseMovement = function (e) {
+        if (mouseDownOnElement == true) {
+            var mouseDelta = { x: e.pageX - mousePrevPos.x, y: e.pageY - mousePrevPos.y };
+            com.local.SVG.Lib.MovePathObject(movableElement, mouseDelta.x, mouseDelta.y);
+            mousePrevPos.x = e.pageX;
+            mousePrevPos.y = e.pageY;
+        }
+    };
+
+    var endMouseDrag = function () {
+        mouseDownOnElement = false;
+    }
+
+    return {
+        Initialize: function (element, parent) { init(element, parent); },
+        BeginDrag: function (e) { beginMouseDrag(e); },
+        MouseMoved: function (e) { handleMouseMovement(e); },
+        EndDrag: function () { endMouseDrag(); }
+    }
+
 }
 
 //UI to test the Movable class
 com.local.SVGHandlers = function () {
     var myTriangle;
+    var myTriangle2;
     var myParent;
 
     function attachEventHandlers() {
         //define the object that can be dragged
         myTriangle = document.getElementById("myTriangle");
+        //secondary element that can be dragged
+        myTriangle2 = document.getElementById("myTriangle2");
+
         //specify the region in which dragging should work well
         myParent = document.getElementById("svgHost");
 
         var movableTriangle = new com.local.SVG.Movable;
+        var movableTriangle2 = new com.local.SVG.Movable;
         movableTriangle.Initialize(myTriangle, myParent);
+        movableTriangle2.Initialize(myTriangle2, myParent);
 
-        myTriangle.onmousedown = movableTriangle.BeginDrag;
+        //myTriangle.onmousedown = movableTriangle.BeginDrag;
+        //myTriangle2.onmousedown = movableTriangle2.BeginDrag;
 
         //myTriangle.onmousemove = movableTriangle.MouseMoved;
-        myTriangle.onmousemove = movableTriangle.MouseMoved;
+        //myTriangle.onmousemove = movableTriangle.MouseMoved;
         myParent.onmousemove = movableTriangle.MouseMoved;
 
-        myTriangle.onmouseup = movableTriangle.EndDrag;
+        //myTriangle.onmouseup = movableTriangle.EndDrag;
         myParent.onmouseup = movableTriangle.EndDrag;
 
         /*TODO: -conditional handlers on myParent when multiple children are draggable
