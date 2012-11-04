@@ -67,24 +67,34 @@ to tell it when moving starts, continues, and ends*/
 com.local.SVG.MovableChild = function () {
     var movableElement;
     var parentElement;
+    var myParentMovable;
     var mousePrevPos = { x: null, y: null };
     var mouseDownOnElement;
 
 
-    var init = function (element, parent) {
-        movableElement = element;
-        parentElement = parent;
+    var init = function (thisElement, parentMovable) {
+        //set up relationship to parent
+        movableElement = thisElement;
+        myParentMovable = parentMovable;
+        parentElement = parentMovable.Element;
+        parentMovable.AddChild(movableElement);
+
+
+        //setup mouse handlers for this child
         movableElement.onmousedown = beginMouseDrag;
         movableElement.onmousemove = handleMouseMovement;
         movableElement.onmouseup = endMouseDrag;
     };
 
     var beginMouseDrag = function (e) {
-        mouseDownOnElement = true;
-        mousePrevPos.x = e.pageX;
-        mousePrevPos.y = e.pageY;
-        if (mousePrevPos.x == null) { mousePrevPos.x = e.clientX; }
-        if (mousePrevPos.y == null) { mousePrevPos.y = e.clientY; }
+        //check with the parent about whether we can drag
+        if (myParentMovable.ChildBeginDrag(movableElement)) {
+            mouseDownOnElement = true;
+            mousePrevPos.x = e.pageX;
+            mousePrevPos.y = e.pageY;
+            if (mousePrevPos.x == null) { mousePrevPos.x = e.clientX; }
+            if (mousePrevPos.y == null) { mousePrevPos.y = e.clientY; }
+        }
     };
 
     var handleMouseMovement = function (e) {
@@ -97,7 +107,9 @@ com.local.SVG.MovableChild = function () {
     };
 
     var endMouseDrag = function () {
-        mouseDownOnElement = false;
+        if (myParentMovable.ChildEndDrag(movableElement)) {
+            mouseDownOnElement = false;
+        }
     }
 
     return {
@@ -111,8 +123,13 @@ com.local.SVG.MovableChild = function () {
 
 
 com.local.SVG.MovableParent = function () {
+    var myElement;
     var myChildren = [];
     var whichChildHasMouseDown;
+
+    var init = function (initElement) {
+        myElement = initElement;
+    }
 
     var addChild = function (childElement) {
         myChildren.push(childElement);
@@ -121,7 +138,7 @@ com.local.SVG.MovableParent = function () {
 
     //find the index value of a child element, given the element object
     var getChildIndex = function (childElement) {
-        for (var i = 1; i < myChildren.length; i++) {
+        for (var i = 0; i < myChildren.length; i++) {
             if (myChildren[i] == childElement) {
                 return i;
             }
@@ -135,17 +152,36 @@ com.local.SVG.MovableParent = function () {
             return true;   //for now, also tell the child that it has the right to drag
         }
         //if there's already a child element being dragged, do nothing
-        else { return false;  }
+        else { return false; }
+    }
+
+    var handleMouseMovement = function (e) {
+        if (whichChildHasMouseDown != null) {
+            //myChildren[whichChildHasMouseDown]. <-- need to reference the child Movable now, to move it
+        }
     }
 
     var childEndDrag = function (childElement) {
         //sanity check that this event is coming from the element that actually was dragging
         if (whichChildHasMouseDown == getChildIndex(childElement)) {
             whichChildHasMouseDown = null;
+            return true;
         }
+        else { return false; }
     }
 
+
     //could implement some handling to arbitrate between child elements here, if needed
+
+    return {
+        Initalize: function (thisParentElement) { init(thisParentElement); },
+        Element: function () { return myElement; },
+        ChildBeginDrag: function (childElement) { return childBeginDragAttempt(childElement); },
+        ChildEndDrag: function (childElement) { return childEndDrag(childElement); },
+        MouseMoved: function (e) { handleMouseMovement(e); },
+        EndDrag: function () { endMouseDrag(); },
+        AddChild: function (childElement) { addChild(childElement); }
+    }
 
 }
 
@@ -163,16 +199,16 @@ com.local.SVGHandlers = function () {
         //specify the region in which dragging should work well
         myParent = document.getElementById("svgHost");
 
+        var movableParent = new com.local.SVG.MovableParent;
         var movableTriangle = new com.local.SVG.MovableChild;
         var movableTriangle2 = new com.local.SVG.MovableChild;
-        var movableParent = new com.local.SVG.MovableParent;
 
-        movableTriangle.Initialize(myTriangle, myParent);
-        movableTriangle2.Initialize(myTriangle2, myParent);
+        movableParent.Initalize(myParent);
+        movableTriangle.Initialize(myTriangle, movableParent);
+        movableTriangle2.Initialize(myTriangle2, movableParent);
 
-
-        myParent.onmousemove = movableTriangle.MouseMoved;
-        myParent.onmouseup = movableTriangle.EndDrag;
+        myParent.onmousemove = movableParent.MouseMoved;
+        myParent.onmouseup = movableParent.EndDragged;
 
         /*TODO:
         -collision detection?
