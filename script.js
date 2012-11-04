@@ -64,7 +64,7 @@ com.local.SVG.Lib = function () {
 
 /*class to define a path object that can be moved - just need to attach handlers
 to tell it when moving starts, continues, and ends*/
-com.local.SVG.Movable = function () {
+com.local.SVG.MovableChild = function () {
     var movableElement;
     var parentElement;
     var mousePrevPos = { x: null, y: null };
@@ -109,6 +109,46 @@ com.local.SVG.Movable = function () {
 
 }
 
+
+com.local.SVG.MovableParent = function () {
+    var myChildren = [];
+    var whichChildHasMouseDown;
+
+    var addChild = function (childElement) {
+        myChildren.push(childElement);
+
+    }
+
+    //find the index value of a child element, given the element object
+    var getChildIndex = function (childElement) {
+        for (var i = 1; i < myChildren.length; i++) {
+            if (myChildren[i] == childElement) {
+                return i;
+            }
+        }
+    }
+
+    var childBeginDragAttempt = function (childElement) {
+        //if no child element is being dragged, find the right index and start dragging this one
+        if (whichChildHasMouseDown == null) {
+            whichChildHasMouseDown = getChildIndex(childElement);
+            return true;   //for now, also tell the child that it has the right to drag
+        }
+        //if there's already a child element being dragged, do nothing
+        else { return false;  }
+    }
+
+    var childEndDrag = function (childElement) {
+        //sanity check that this event is coming from the element that actually was dragging
+        if (whichChildHasMouseDown == getChildIndex(childElement)) {
+            whichChildHasMouseDown = null;
+        }
+    }
+
+    //could implement some handling to arbitrate between child elements here, if needed
+
+}
+
 //UI to test the Movable class
 com.local.SVGHandlers = function () {
     var myTriangle;
@@ -120,26 +160,21 @@ com.local.SVGHandlers = function () {
         myTriangle = document.getElementById("myTriangle");
         //secondary element that can be dragged
         myTriangle2 = document.getElementById("myTriangle2");
-
         //specify the region in which dragging should work well
         myParent = document.getElementById("svgHost");
 
-        var movableTriangle = new com.local.SVG.Movable;
-        var movableTriangle2 = new com.local.SVG.Movable;
+        var movableTriangle = new com.local.SVG.MovableChild;
+        var movableTriangle2 = new com.local.SVG.MovableChild;
+        var movableParent = new com.local.SVG.MovableParent;
+
         movableTriangle.Initialize(myTriangle, myParent);
         movableTriangle2.Initialize(myTriangle2, myParent);
 
-        //myTriangle.onmousedown = movableTriangle.BeginDrag;
-        //myTriangle2.onmousedown = movableTriangle2.BeginDrag;
 
-        //myTriangle.onmousemove = movableTriangle.MouseMoved;
-        //myTriangle.onmousemove = movableTriangle.MouseMoved;
         myParent.onmousemove = movableTriangle.MouseMoved;
-
-        //myTriangle.onmouseup = movableTriangle.EndDrag;
         myParent.onmouseup = movableTriangle.EndDrag;
 
-        /*TODO: -conditional handlers on myParent when multiple children are draggable
+        /*TODO:
         -collision detection?
         */
     };
