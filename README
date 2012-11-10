@@ -1,1 +1,1 @@
-SVG Testbed for proof-of-concept work. Things like draggable elements, click handlers, parent-child relationships, etc.
+SVG Framework to demonstrate smooth click-and-drag functionality of an SVG object. Novel contribution is the use of "parent-assisted dragging": instead of only catching mouse movement on the object being dragged, we also use mouse movement events on the parent to smooth out the dragging. This prevents the common case where the mouse cursor gets ahead of the SVG object and dragging is interrupted unexpectedly.
